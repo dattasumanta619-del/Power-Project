@@ -33,6 +33,7 @@ const defaultConfig: AppConfig = {
 const listeners = new Set<SnapshotListener>();
 let intervalId: ReturnType<typeof setInterval> | null = null;
 let anomalyDecayCounter = 0;
+let externalRealtimeActive = false;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -175,6 +176,10 @@ function emit(): void {
 }
 
 function tick(): void {
+  if (externalRealtimeActive) {
+    return;
+  }
+
   const timestamp = Date.now();
   const previous = state.latest;
   let nextReading = createReading(previous, timestamp);
@@ -264,6 +269,8 @@ export function updateMockConfig(nextConfig: AppConfig): MockSnapshot {
 }
 
 export function syncExternalReading(reading: Reading): MockSnapshot {
+  externalRealtimeActive = true;
+
   if (areReadingsEquivalent(state.latest, reading)) {
     return getMockSnapshot();
   }
