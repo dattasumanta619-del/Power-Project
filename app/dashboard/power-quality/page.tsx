@@ -11,46 +11,71 @@ function getSeries(history: number[], count = 12): number[] {
   return history.slice(-count);
 }
 
+function getVoltageCondition(voltage: number): {
+  label: string;
+  subtitle: string;
+  accent: "blue" | "gold" | "red";
+} {
+  if (voltage < 207) {
+    return {
+      label: "Sag",
+      subtitle: "Below 207 V threshold for nominal 230 V line",
+      accent: "red"
+    };
+  }
+
+  if (voltage > 253) {
+    return {
+      label: "Swell",
+      subtitle: "Above 253 V threshold for nominal 230 V line",
+      accent: "gold"
+    };
+  }
+
+  return {
+    label: "Normal",
+    subtitle: "Within +/-10% band around 230 V nominal",
+    accent: "blue"
+  };
+}
+
 export default function PowerQualityPage(): JSX.Element {
-  const { latest, history, alerts, realtimeLoading, historyLoading, alertsLoading } =
+  const { latest, history, realtimeLoading, historyLoading, alertsLoading } =
     useDataContext();
+  const voltageCondition = getVoltageCondition(latest.voltage);
 
   const metrics = [
     {
       title: "Voltage",
-      value: "",
-      subtitle: "Phase-to-neutral stability",
-      sparkline: [],
-      accent: "blue" as const,
-      isPending: true
+      value: `${latest.voltage.toFixed(2)} V`,
+      subtitle: `Condition: ${voltageCondition.label}. ${voltageCondition.subtitle}`,
+      sparkline: getSeries(history.map((item) => item.voltage)),
+      accent: voltageCondition.accent
     },
     {
       title: "Power",
-      value: "",
+      value: `${latest.power.toFixed(2)} W`,
       subtitle: "Real-time active load",
-      sparkline: [],
-      accent: "green" as const,
-      isPending: true
+      sparkline: getSeries(history.map((item) => item.power)),
+      accent: "green" as const
     },
     {
       title: "Power Factor",
-      value: "",
+      value: latest.power_factor.toFixed(2),
       subtitle: "Closer to 1.00 is healthier",
-      sparkline: [],
-      accent: "gold" as const,
-      isPending: true
+      sparkline: getSeries(history.map((item) => item.power_factor)),
+      accent: "gold" as const
     },
     {
       title: "Energy",
-      value: "",
+      value: `${latest.energy_kwh.toFixed(4)} kWh`,
       subtitle: "Accumulated feeder energy",
-      sparkline: [],
-      accent: "blue" as const,
-      isPending: true
+      sparkline: getSeries(history.map((item) => item.energy_kwh)),
+      accent: "blue" as const
     },
     {
       title: "Temperature",
-      value: `${latest.temperature.toFixed(1)} °C`,
+      value: `${latest.temperature.toFixed(1)} C`,
       subtitle: "Cabinet thermal profile",
       sparkline: getSeries(history.map((item) => item.temperature)),
       accent: "red" as const
@@ -93,13 +118,13 @@ export default function PowerQualityPage(): JSX.Element {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.25fr_1fr]">
-        <SineWave voltage={latest.voltage} anomaly={latest.anomaly_flag} isPending />
+        <SineWave voltage={latest.voltage} anomaly={latest.anomaly_flag} />
         <TempGauge temperature={latest.temperature} history={history} />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
-        <DualCurrentChart history={history} isPending />
-        <ConsumptionBar history={history} isPending />
+        <DualCurrentChart history={history} hasSecondary={false} />
+        <ConsumptionBar history={history} />
       </section>
 
       <section className="rounded-2xl border border-white/10 bg-powerCard p-5 shadow-glow">
@@ -129,7 +154,9 @@ export default function PowerQualityPage(): JSX.Element {
                 <td className="px-3 py-4">No event feed connected yet</td>
                 <td className="px-3 py-4">Pending</td>
                 <td className="px-3 py-4">
-                  Temperature and humidity are live. Voltage, current, energy, and event fields are intentionally blank until Firebase sources are added.
+                  Voltage, current, power, energy, temperature, humidity, and
+                  power factor are live. Event and anomaly feeds are still
+                  waiting for real Firebase paths.
                 </td>
               </tr>
             </tbody>

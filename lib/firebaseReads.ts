@@ -15,7 +15,11 @@ function normalizeReading(value: unknown): Reading | null {
   const voltage =
     typeof raw.voltage === "number" ? raw.voltage : base.voltage;
   const currentCt1 =
-    typeof raw.current_ct1 === "number" ? raw.current_ct1 : base.current_ct1;
+    typeof raw.current_ct1 === "number"
+      ? raw.current_ct1
+      : typeof raw.current === "number"
+        ? raw.current
+        : base.current_ct1;
   const currentCt2 =
     typeof raw.current_ct2 === "number" ? raw.current_ct2 : base.current_ct2;
   const power =
@@ -23,7 +27,11 @@ function normalizeReading(value: unknown): Reading | null {
   const powerFactor =
     typeof raw.power_factor === "number" ? raw.power_factor : base.power_factor;
   const energyKwh =
-    typeof raw.energy_kwh === "number" ? raw.energy_kwh : base.energy_kwh;
+    typeof raw.energy_kwh === "number"
+      ? raw.energy_kwh
+      : typeof raw.energy === "number"
+        ? raw.energy / 1000
+        : base.energy_kwh;
   const temperature =
     typeof raw.temperature === "number" ? raw.temperature : base.temperature;
   const humidity =
@@ -36,8 +44,24 @@ function normalizeReading(value: unknown): Reading | null {
     typeof raw.anomaly_flag === "boolean" ? raw.anomaly_flag : base.anomaly_flag;
   const anomalyScore =
     typeof raw.anomaly_score === "number" ? raw.anomaly_score : base.anomaly_score;
+  const hasSensorChange =
+    voltage !== base.voltage ||
+    currentCt1 !== base.current_ct1 ||
+    currentCt2 !== base.current_ct2 ||
+    power !== base.power ||
+    powerFactor !== base.power_factor ||
+    energyKwh !== base.energy_kwh ||
+    temperature !== base.temperature ||
+    humidity !== base.humidity ||
+    differentialPercent !== base.differential_percent ||
+    anomalyFlag !== base.anomaly_flag ||
+    anomalyScore !== base.anomaly_score;
   const timestamp =
-    typeof raw.timestamp === "number" ? raw.timestamp : Date.now();
+    typeof raw.timestamp === "number"
+      ? raw.timestamp
+      : hasSensorChange
+        ? Date.now()
+        : base.timestamp;
 
   if (typeof temperature !== "number" || typeof humidity !== "number") {
     return null;

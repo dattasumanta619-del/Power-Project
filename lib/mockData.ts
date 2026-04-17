@@ -42,6 +42,22 @@ function generateId(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function areReadingsEquivalent(left: Reading, right: Reading): boolean {
+  return (
+    left.voltage === right.voltage &&
+    left.current_ct1 === right.current_ct1 &&
+    left.current_ct2 === right.current_ct2 &&
+    left.power === right.power &&
+    left.power_factor === right.power_factor &&
+    left.energy_kwh === right.energy_kwh &&
+    left.temperature === right.temperature &&
+    left.humidity === right.humidity &&
+    left.differential_percent === right.differential_percent &&
+    left.anomaly_flag === right.anomaly_flag &&
+    left.anomaly_score === right.anomaly_score
+  );
+}
+
 function createReading(
   previous: Reading | null,
   timestamp: number,
@@ -248,6 +264,10 @@ export function updateMockConfig(nextConfig: AppConfig): MockSnapshot {
 }
 
 export function syncExternalReading(reading: Reading): MockSnapshot {
+  if (areReadingsEquivalent(state.latest, reading)) {
+    return getMockSnapshot();
+  }
+
   state = {
     ...state,
     latest: reading,

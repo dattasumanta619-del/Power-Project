@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   CategoryScale,
   Chart as ChartJS,
@@ -20,10 +20,10 @@ interface SineWaveProps {
   isPending?: boolean;
 }
 
-function generateSinePoints(voltage: number, phase: number): number[] {
+function generateSinePoints(voltage: number): number[] {
   return Array.from({ length: 120 }, (_, index) => {
     const x = (index / 120) * Math.PI * 4;
-    return Number((Math.sin(x + phase) * (voltage / 10)).toFixed(2));
+    return Number((Math.sin(x) * (voltage / 10)).toFixed(2));
   });
 }
 
@@ -32,25 +32,15 @@ export function SineWave({
   anomaly,
   isPending = false
 }: SineWaveProps): JSX.Element {
-  const [phase, setPhase] = useState<number>(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setPhase((current) => current + 0.45);
-    }, 150);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const points = useMemo(() => generateSinePoints(voltage, phase), [phase, voltage]);
+  const points = useMemo(() => generateSinePoints(voltage), [voltage]);
 
   return (
     <div className="rounded-2xl border border-white/10 bg-powerCard p-5 shadow-glow">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <p className="text-sm uppercase tracking-[0.2em] text-white/55">Live 50Hz Waveform</p>
+          <p className="text-sm uppercase tracking-[0.2em] text-white/55">Voltage Profile</p>
           <h3 className="mt-2 text-xl font-semibold text-white">
-            Phase voltage simulation
+            Static waveform from latest voltage sample
           </h3>
         </div>
         <span
@@ -62,7 +52,7 @@ export function SineWave({
                 : "bg-blue-500/20 text-blue-100"
           }`}
         >
-          {isPending ? "Awaiting voltage feed" : anomaly ? "Distorted load" : "Stable signal"}
+          {isPending ? "Awaiting voltage feed" : anomaly ? "Abnormal condition" : "Stable sample"}
         </span>
       </div>
 
@@ -79,21 +69,16 @@ export function SineWave({
                 {
                   data: points,
                   borderColor: anomaly ? "#ef5b5b" : "#4d92ff",
-                  backgroundColor: anomaly
-                    ? "rgba(239,91,91,0.12)"
-                    : "rgba(77,146,255,0.12)",
-                  fill: true,
+                  backgroundColor: "transparent",
+                  fill: false,
                   borderWidth: 2,
                   pointRadius: 0,
-                  tension: 0.2
+                  tension: 0
                 }
               ]
             }}
             options={{
-              animation: {
-                duration: 180,
-                easing: "linear"
-              },
+              animation: false,
               maintainAspectRatio: false,
               plugins: {
                 legend: {
@@ -122,6 +107,11 @@ export function SineWave({
           />
         )}
       </div>
+      {!isPending ? (
+        <p className="mt-3 text-xs text-white/55">
+          The waveform refreshes only when the voltage sample changes.
+        </p>
+      ) : null}
     </div>
   );
 }

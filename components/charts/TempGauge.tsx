@@ -36,6 +36,9 @@ export function TempGauge({
   const recent = history.slice(-10);
   const max = 80;
   const bounded = Math.min(temperature, max);
+  const hasVariation =
+    recent.length > 1 &&
+    recent.some((item, _index, values) => item.temperature !== values[0]?.temperature);
 
   return (
     <div className="rounded-2xl border border-white/10 bg-powerCard p-5 shadow-glow">
@@ -67,9 +70,7 @@ export function TempGauge({
               ]
             }}
             options={{
-              animation: {
-                duration: 800
-              },
+              animation: false,
               cutout: "72%",
               plugins: {
                 legend: {
@@ -81,7 +82,7 @@ export function TempGauge({
           />
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
             <p className="text-4xl font-semibold text-white">{temperature.toFixed(1)}</p>
-            <p className="text-sm uppercase tracking-[0.22em] text-white/55">°C</p>
+            <p className="text-sm uppercase tracking-[0.22em] text-white/55">C</p>
           </div>
         </div>
 
@@ -100,15 +101,13 @@ export function TempGauge({
                   borderColor: "#ef5b5b",
                   backgroundColor: "rgba(239,91,91,0.14)",
                   fill: true,
-                  pointRadius: 0,
-                  tension: 0.35
+                  pointRadius: hasVariation ? 1.5 : 0,
+                  tension: hasVariation ? 0.12 : 0
                 }
               ]
             }}
             options={{
-              animation: {
-                duration: 700
-              },
+              animation: false,
               maintainAspectRatio: false,
               plugins: {
                 legend: {
@@ -130,13 +129,19 @@ export function TempGauge({
                   },
                   ticks: {
                     color: "rgba(255,255,255,0.55)"
-                  }
+                  },
+                  suggestedMax: hasVariation ? undefined : temperature + 1
                 }
               }
             }}
           />
         </div>
       </div>
+      <p className="mt-4 text-xs text-white/55">
+        {hasVariation
+          ? "Thermal trend reflects true sample changes only."
+          : "Temperature trace is flat because the incoming sensor reading is unchanged."}
+      </p>
     </div>
   );
 }

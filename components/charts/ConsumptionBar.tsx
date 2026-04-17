@@ -40,6 +40,9 @@ export function ConsumptionBar({
   isPending = false
 }: ConsumptionBarProps): JSX.Element {
   const chart = buildHourlyConsumption(history);
+  const hasVariation =
+    chart.values.length > 1 &&
+    chart.values.some((value, index, values) => value !== values[0]);
 
   return (
     <div className="rounded-2xl border border-white/10 bg-powerCard p-5 shadow-glow">
@@ -66,9 +69,7 @@ export function ConsumptionBar({
               ]
             }}
             options={{
-              animation: {
-                duration: 700
-              },
+              animation: false,
               maintainAspectRatio: false,
               plugins: {
                 legend: {
@@ -90,13 +91,21 @@ export function ConsumptionBar({
                   },
                   ticks: {
                     color: "rgba(255,255,255,0.55)"
-                  }
+                  },
+                  suggestedMax: hasVariation ? undefined : (chart.values[0] ?? 0) + 1
                 }
               }
             }}
           />
         )}
       </div>
+      {!isPending ? (
+        <p className="mt-3 text-xs text-white/55">
+          {hasVariation
+            ? "Bars update only when incoming power samples change."
+            : "Stable load window: no material change in recent power samples."}
+        </p>
+      ) : null}
     </div>
   );
 }

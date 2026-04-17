@@ -38,6 +38,21 @@ export function MetricCard({
   sparkline,
   isPending = false
 }: MetricCardProps): JSX.Element {
+  const sparklineValues =
+    sparkline.length > 1 ? sparkline : sparkline.length === 1 ? [sparkline[0], sparkline[0]] : [];
+  const minValue = sparklineValues.length > 0 ? Math.min(...sparklineValues) : 0;
+  const maxValue = sparklineValues.length > 0 ? Math.max(...sparklineValues) : 0;
+  const valueRange = Number((maxValue - minValue).toFixed(4));
+  const isStable = valueRange === 0;
+  const borderColor =
+    accent === "gold"
+      ? "#c9a227"
+      : accent === "green"
+        ? "#1fb16a"
+        : accent === "red"
+          ? "#ef5b5b"
+          : "#4d92ff";
+
   return (
     <div
       className={clsx(
@@ -66,30 +81,22 @@ export function MetricCard({
         ) : (
           <Line
             data={{
-              labels: sparkline.map((_, index) => index.toString()),
+              labels: sparklineValues.map((_, index) => index.toString()),
               datasets: [
                 {
-                  data: sparkline,
-                  borderColor:
-                    accent === "gold"
-                      ? "#c9a227"
-                      : accent === "green"
-                        ? "#1fb16a"
-                        : accent === "red"
-                          ? "#ef5b5b"
-                          : "#4d92ff",
-                  backgroundColor: "rgba(77, 146, 255, 0.08)",
-                  fill: true,
+                  data: sparklineValues,
+                  borderColor,
+                  backgroundColor: "transparent",
+                  fill: false,
                   borderWidth: 2,
-                  pointRadius: 0,
-                  tension: 0.35
+                  pointRadius: isStable ? 0 : 1.5,
+                  pointHoverRadius: 2,
+                  tension: isStable ? 0 : 0.12
                 }
               ]
             }}
             options={{
-              animation: {
-                duration: 600
-              },
+              animation: false,
               plugins: {
                 legend: {
                   display: false
@@ -105,7 +112,13 @@ export function MetricCard({
                   display: false
                 },
                 y: {
-                  display: false
+                  display: false,
+                  suggestedMin: isStable
+                    ? minValue - Math.max(Math.abs(minValue) * 0.01, 0.25)
+                    : undefined,
+                  suggestedMax: isStable
+                    ? maxValue + Math.max(Math.abs(maxValue) * 0.01, 0.25)
+                    : undefined
                 }
               }
             }}
@@ -116,6 +129,11 @@ export function MetricCard({
       <p className="mt-3 text-xs text-white/65">
         {isPending ? "Provision kept for future live Firebase mapping." : subtitle}
       </p>
+      {!isPending ? (
+        <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-white/40">
+          {isStable ? "Stable trace" : `Observed range ${valueRange.toFixed(2)}`}
+        </p>
+      ) : null}
     </div>
   );
 }
